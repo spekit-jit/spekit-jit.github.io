@@ -1,54 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Enablement Dashboard</title>
+<meta name="color-scheme" content="light dark">
 <style>
-  body{font-family:-apple-system,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:24px;line-height:1.45}
-  h1{margin:0 0 8px} .sub{color:#666;margin:0 0 16px}
-  .grid{display:grid;grid-template-columns:1fr;gap:12px}
-  a.card{display:block;padding:14px 16px;border:1px solid #ddd;border-radius:12px;text-decoration:none;color:#111;background:#fafafa}
-  .card small{display:block;color:#666;margin-top:4px}
-  .row{display:flex;gap:8px;margin:12px 0}
-  input{flex:1;padding:10px;border:1px solid #ddd;border-radius:8px}
-  button{padding:10px 14px;border:1px solid #444;border-radius:8px;background:#111;color:#fff}
+  :root{
+    --bg:#fff; --fg:#111; --muted:#666; --border:#ddd; --card:#fafafa; --focus:#2b6cb0;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b0b0c; --fg:#f3f4f6; --muted:#9aa0a6; --border:#2a2a2a; --card:#121214; --focus:#8ab4f8;
+    }
+  }
+  * { box-sizing: border-box }
+  html, body { height: 100% }
+  body{
+    margin:24px;
+    font-family:-apple-system, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height:1.5;
+    background:var(--bg);
+    color:var(--fg);
+  }
+  .container{ max-width: 820px; margin: 0 auto }
+  h1{ margin:0 0 8px }
+  .sub{ color:var(--muted); margin:0 0 16px }
+  .grid{ display:grid; grid-template-columns:1fr; gap:12px }
+  @media (min-width: 640px){
+    .grid{ grid-template-columns: repeat(2, minmax(0,1fr)) }
+  }
+  a.card{
+    display:block;
+    padding:14px 16px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    text-decoration:none;
+    color:inherit;
+    background:var(--card);
+  }
+  .card small{ display:block; color:var(--muted); margin-top:4px }
+  .row{ display:flex; gap:8px; margin:12px 0 }
+  label{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; clip-path: inset(50%); }
+  input[type="search"]{
+    flex:1;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:transparent;
+    color:inherit;
+  }
+  button{
+    padding:10px 14px;
+    border:1px solid var(--fg);
+    border-radius:8px;
+    background:var(--fg);
+    color:var(--bg);
+  }
+  button:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+  }
+  :focus-visible{
+    outline:2px solid var(--focus);
+    outline-offset:3px;
+  }
+  [hidden]{ display:none !important }
+  .meta{ font-size:.9rem; color:var(--muted); margin:8px 0 0 }
 </style>
 </head>
 <body>
-  <h1>Enablement Dashboard</h1>
-  <p class="sub">Home for mini-tools (C.L.E.A.R., CARL, etc.).</p>
+  <main class="container" aria-describedby="page-subtitle">
+    <h1>Enablement Dashboard</h1>
+    <p id="page-subtitle" class="sub">Home for mini-tools (C.L.E.A.R., CARL, etc.).</p>
 
-  <!-- quick search just filters visible cards -->
-  <div class="row">
-    <input id="q" placeholder="Filter tools by name…">
-    <button id="clear" type="button">Clear</button>
-  </div>
+    <!-- Search: labeled, described, and keyboard friendly -->
+    <div class="row" role="search">
+      <label for="q">Filter tools</label>
+      <input id="q" type="search" placeholder="Filter tools by name…" autocomplete="off" aria-describedby="hint">
+      <button id="clear" type="button" aria-label="Clear filter" disabled>Clear</button>
+    </div>
+    <p id="hint" class="meta">Tip: press “/” to focus the filter.</p>
+    <p id="count" class="meta" aria-live="polite"></p>
+    <p id="empty" class="meta" hidden>No tools match your filter.</p>
 
-  <div id="tools" class="grid">
-    <a class="card" href="/tools/rater/">
-      CLEAR Prompt Rater
-      <small>Score prompts: Context • Limits • Examples • Action • Refine</small>
-    </a>
-    <a class="card" href="/tools/carl-check/">
-      CARL Quick Check
-      <small>Context • Action • Rules • Level (30-sec cleanup)</small>
-    </a>
-  </div>
+    <!-- Tool list -->
+    <div id="tools" class="grid" role="list">
+      <a class="card" role="listitem" href="/tools/rater/">
+        CLEAR Prompt Rater
+        <small>Score prompts: Context • Limits • Examples • Action • Refine</small>
+      </a>
+      <a class="card" role="listitem" href="/tools/carl-check/">
+        CARL Quick Check
+        <small>Context • Action • Rules • Level (30-sec cleanup)</small>
+      </a>
+    </div>
+
+    <noscript><p class="meta">Search requires JavaScript. All tools are shown.</p></noscript>
+  </main>
 
 <script>
 (function(){
   const q = document.getElementById('q');
   const clearBtn = document.getElementById('clear');
-  const cards = Array.from(document.querySelectorAll('#tools .card'));
+  const container = document.getElementById('tools');
+  const cards = Array.from(container.querySelectorAll('.card'));
+  const empty = document.getElementById('empty');
+  const count = document.getElementById('count');
+
+  function updateCount(visible){
+    count.textContent = visible === cards.length
+      ? `${cards.length} tool${cards.length === 1 ? '' : 's'}`
+      : `${visible} of ${cards.length} tools`;
+  }
+
+  let raf = 0;
   function filter(){
-    const t = q.value.toLowerCase();
-    cards.forEach(c => {
-      const hit = c.textContent.toLowerCase().includes(t);
-      c.style.display = hit ? '' : 'none';
+    const t = q.value.trim().toLowerCase();
+    // requestAnimationFrame throttle to keep UI snappy
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      let visible = 0;
+      for (const c of cards){
+        const hit = c.textContent.toLowerCase().includes(t);
+        c.hidden = !hit;
+        if (hit) visible++;
+      }
+      empty.hidden = visible !== 0;
+      updateCount(visible);
+      clearBtn.disabled = q.value.length === 0;
     });
   }
+
   q.addEventListener('input', filter);
   clearBtn.addEventListener('click', () => { q.value=''; filter(); q.focus(); });
+
+  // “/” focuses the search unless typing in an input/textarea
+  window.addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA'){
+      e.preventDefault();
+      q.focus();
+      q.select();
+    }
+  });
+
+  // Initialize state (restore from hash if present)
+  if (location.hash.length > 1){
+    try {
+      q.value = decodeURIComponent(location.hash.slice(1));
+    } catch {}
+  }
+  filter();
+
+  // Persist filter in URL hash for shareability (optional but handy)
+  let hashTimer;
+  q.addEventListener('input', () => {
+    clearTimeout(hashTimer);
+    hashTimer = setTimeout(() => {
+      const v = q.value.trim();
+      if (v) location.hash = encodeURIComponent(v);
+      else history.replaceState(null, '', location.pathname + location.search);
+    }, 200);
+  });
 })();
 </script>
 </body>
