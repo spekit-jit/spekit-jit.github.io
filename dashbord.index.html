@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Enablement Dashboard</title>
+<style>
+  body{font-family:-apple-system,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:24px;line-height:1.45}
+  h1{margin:0 0 8px} .sub{color:#666;margin:0 0 16px}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px}
+  a.card{display:block;padding:14px 16px;border:1px solid #ddd;border-radius:12px;text-decoration:none;color:#111;background:#fafafa}
+  .card small{display:block;color:#666;margin-top:4px}
+  .row{display:flex;gap:8px;margin:12px 0}
+  input{flex:1;padding:10px;border:1px solid #ddd;border-radius:8px}
+  button{padding:10px 14px;border:1px solid #444;border-radius:8px;background:#111;color:#fff}
+</style>
+</head>
+<body>
+  <h1>Enablement Dashboard</h1>
+  <p class="sub">Home for mini-tools (C.L.E.A.R., CARL, etc.).</p>
+
+  <!-- quick search just filters visible cards -->
+  <div class="row">
+    <input id="q" placeholder="Filter tools by name…">
+    <button id="clear" type="button">Clear</button>
+  </div>
+
+  <div id="tools" class="grid">
+    <a class="card" href="/tools/rater/">
+      CLEAR Prompt Rater
+      <small>Score prompts: Context • Limits • Examples • Action • Refine</small>
+    </a>
+    <a class="card" href="/tools/carl-check/">
+      CARL Quick Check
+      <small>Context • Action • Rules • Level (30-sec cleanup)</small>
+    </a>
+  </div>
+
+<script>
+(function(){
+  const q = document.getElementById('q');
+  const clearBtn = document.getElementById('clear');
+  const cards = Array.from(document.querySelectorAll('#tools .card'));
+  function filter(){
+    const t = q.value.toLowerCase();
+    cards.forEach(c => {
+      const hit = c.textContent.toLowerCase().includes(t);
+      c.style.display = hit ? '' : 'none';
+    });
+  }
+  q.addEventListener('input', filter);
+  clearBtn.addEventListener('click', () => { q.value=''; filter(); q.focus(); });
+})();
+</script>
+</body>
+</html>
